@@ -32,8 +32,8 @@ async def start(print_func):
         name='mc-main',
         region='ams3',
         image='debian-11-x64',
-        #size_slug='s-2vcpu-4gb-amd',
-        size_slug='s-1vcpu-1gb-amd',
+        size_slug='s-2vcpu-4gb-amd',
+        #size_slug='s-1vcpu-1gb-amd',
         ssh_keys=[PUBLIC_KEY],
         backups=False,
         ipv6=False,
@@ -62,7 +62,7 @@ async def start(print_func):
 
     ip = digitalocean.Droplet.get_object(TOKEN, droplet.id).ip_address
 
-    await print_func("`[] Attaching volume...")
+    await print_func("`[] Attaching volume...`")
 
     volumes = manager.get_all_volumes()
     for volume in volumes:
@@ -89,4 +89,6 @@ def run_remote_cmd(ip, cmd):
     print(os.popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} '{cmd}'"))
 
 def launch_java_server(ip):
-    run_remote_cmd(ip, "java -Xmx1024M -Xms2048M -jar /mnt/volume_mc/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar --nogui")
+    run_remote_cmd(ip, "mkdir -p /mnt/volume_mc")
+    run_remote_cmd(ip, "mount -o discard,defaults,noatime /dev/disk/by-id/scsi-0DO_Volume_volume-mc /mnt/volume_mc")
+    run_remote_cmd(ip, "java -Xmx1024M -Xms2048M -jar /mnt/volume_mc/mc-server/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar --nogui")
