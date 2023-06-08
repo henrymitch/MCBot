@@ -30,7 +30,7 @@ async def start(print_func):
     droplet = digitalocean.Droplet(
         token=TOKEN,
         name='mc-main',
-        region='lon1',
+        region='ams3',
         image='debian-11-x64',
         #size_slug='s-2vcpu-4gb-amd',
         size_slug='s-1vcpu-1gb-amd',
@@ -62,10 +62,15 @@ async def start(print_func):
 
     ip = digitalocean.Droplet.get_object(TOKEN, droplet.id).ip_address
 
-    await print_func("`[] Restoring state...`")
-    restore_state(ip)
-    await print_func("`   Done`")
+    await print_func("`[] Attaching volume...")
 
+    volumes = manager.get_all_volumes()
+    for volume in volumes:
+        if volume.name == 'volume-mc':
+            volume.attach(droplet.id, 'ams3')
+            break
+
+    await print_func("`   Done`")
     await print_func(f"`[] Server IP: {ip}`")
 
 async def stop(print_func):
@@ -76,18 +81,12 @@ async def stop(print_func):
     
     droplet = droplets[0]
 
-    await print_func("`[] Saving state...`")
-    save_state(droplet.ip_address)
-    await print_func("`   Done`")
-
     await print_func("`[] Destorying server...`")
     droplet.destroy()
     await print_func("`   Done`")
 
-def restore_state(ip):
-    print(os.popen(f"scp -i {PRIVATE_KEY_FILE} -o StrictHostKeyChecking=no ./state.tar root@{ip}:~/state.tar").read())
-    print(os.popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeyChecking=no root@{ip} 'tar -xf ~/state.tar -C ~/'").read())
+def run_remote_cmd(ip, cmd):
+    print(os.popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} '{cmd}'"))
 
-def save_state(ip):
-    print(os.popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeyChecking=no root@{ip} 'tar -cf ~/state.tar ~/server'").read())
-    print(os.popen(f"scp -i {PRIVATE_KEY_FILE} -o StrictHostKeyChecking=no root@{ip}:~/state.tar ./state.tar").read())
+def launch_java_server(ip):
+    run_remote_cmd(ip, "java -Xmx1024M -Xms2048M -jar /mnt/volume_mc/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar --nogui")
