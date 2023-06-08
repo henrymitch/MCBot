@@ -1,5 +1,6 @@
 import digitalocean
 import os
+import subprocess
 import time
 
 TOKEN = os.getenv('DIGITALOCEAN_ACCESS_TOKEN')
@@ -38,7 +39,7 @@ async def start(print_func):
         backups=False,
         ipv6=False,
         private_networking=False,
-        user_data=CONFIG,
+        #user_data=CONFIG,
         monitoring=True
     )
 
@@ -93,9 +94,11 @@ async def stop(print_func):
     await print_func("`   Done`")
 
 def run_remote_cmd(ip, cmd):
-    print(os.popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} '{cmd}'"))
+    subprocess.call(['ssh', '-i', PRIVATE_KEY_FILE, '-o', 'StrictHostKeychecking=no', 'root@{ip}', '\'{cmd}\''])
 
 def launch_java_server(ip):
+    run_remote_cmd(ip, "apt-get update")
+    run_remote_cmd(ip, "apt-get install -y openjdk-8-jre")
     run_remote_cmd(ip, "mkdir -p /mnt/volume_mc")
     run_remote_cmd(ip, "mount -o discard,defaults,noatime /dev/disk/by-id/scsi-0DO_Volume_volume-mc /mnt/volume_mc")
     run_remote_cmd(ip, "java -Xmx1024M -Xms1024M -jar /mnt/volume_mc/mc-server/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar --nogui")
