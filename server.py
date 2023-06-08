@@ -59,7 +59,7 @@ async def start(print_func):
     print(droplet)
 
     # Wait for IP to be assigned
-    time.sleep(10)
+    time.sleep(25)
 
     ip = digitalocean.Droplet.get_object(TOKEN, droplet.id).ip_address
 
@@ -71,7 +71,7 @@ async def start(print_func):
             volume.attach(droplet.id, 'ams3')
             break
 
-    time.sleep(10)
+    time.sleep(25)
 
     await print_func("`   Done`")
     await print_func(f"`[] Starting java server...`")
