@@ -31,7 +31,7 @@ async def start(print_func):
         token=TOKEN,
         name='mc-main',
         region='ams3',
-        image='debian-11-x64',
+        image='ubuntu-22-10-x64',
         size_slug='s-2vcpu-4gb-amd',
         #size_slug='s-1vcpu-1gb-amd',
         ssh_keys=[PUBLIC_KEY],
