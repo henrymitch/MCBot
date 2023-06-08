@@ -102,4 +102,6 @@ def launch_java_server(ip):
     run_remote_cmd(ip, "apt-get install -y openjdk-8-jre")
     run_remote_cmd(ip, "mkdir -p /mnt/volume_mc")
     run_remote_cmd(ip, "mount -o discard,defaults,noatime /dev/disk/by-id/scsi-0DO_Volume_volume-mc /mnt/volume_mc")
-    run_remote_cmd(ip, "cd /mnt/volume_mc/mc-server && java -Xmx1024M -Xms1024M -jar forge-1.7.10-10.13.4.1614-1.7.10-universal.jar --nogui")
+
+    # Don't block
+    process = subprocess.Popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} 'cd /mnt/volume_mc/mc-server && java -Xmx1024M -Xms1024M -jar forge-1.7.10-10.13.4.1614-1.7.10-universal.jar --nogui'", shell=True)
