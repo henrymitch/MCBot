@@ -58,7 +58,7 @@ async def start(print_func):
     print(droplet)
 
     # Wait for IP to be assigned
-    time.sleep(10)
+    time.sleep(20)
 
     ip = digitalocean.Droplet.get_object(TOKEN, droplet.id).ip_address
 
@@ -69,6 +69,8 @@ async def start(print_func):
         if volume.name == 'volume-mc':
             volume.attach(droplet.id, 'ams3')
             break
+
+    time.sleep(20)
 
     await print_func("`   Done`")
     await print_func(f"`[] Starting server...`")
@@ -96,4 +98,4 @@ def run_remote_cmd(ip, cmd):
 def launch_java_server(ip):
     run_remote_cmd(ip, "mkdir -p /mnt/volume_mc")
     run_remote_cmd(ip, "mount -o discard,defaults,noatime /dev/disk/by-id/scsi-0DO_Volume_volume-mc /mnt/volume_mc")
-    run_remote_cmd(ip, "java -Xmx1024M -Xms2048M -jar /mnt/volume_mc/mc-server/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar --nogui")
+    run_remote_cmd(ip, "java -Xmx1024M -Xms1024M -jar /mnt/volume_mc/mc-server/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar --nogui")
