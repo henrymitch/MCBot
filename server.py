@@ -94,7 +94,8 @@ async def stop(print_func):
     await print_func("`   Done`")
 
 def run_remote_cmd(ip, cmd):
-    print(subprocess.Popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} '{cmd}'", shell=True))
+    process = subprocess.Popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} '{cmd}'", shell=True, stdout=subprocess.PIPE)
+    process.wait()
 
 def launch_java_server(ip):
     run_remote_cmd(ip, "apt-get update")
