@@ -94,7 +94,7 @@ async def stop(print_func):
     await print_func("`   Done`")
 
 def run_remote_cmd(ip, cmd):
-    process = subprocess.Popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} '{cmd}'", shell=True, stdout=subprocess.PIPE)
+    process = subprocess.Popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} '{cmd}'", shell=True)
     process.wait()
 
 def launch_java_server(ip):
