@@ -94,10 +94,10 @@ async def stop(print_func):
     await print_func("`   Done`")
 
 def run_remote_cmd(ip, cmd):
-    subprocess.call(['ssh', '-i', PRIVATE_KEY_FILE, '-o', 'StrictHostKeychecking=no', f'root@{ip}', f'\'{cmd}\''])
+    subprocess.call(['ssh', '-i', PRIVATE_KEY_FILE, '-o', 'StrictHostKeychecking=no', f'root@{ip}'].extend(cmd))
 
 def launch_java_server(ip):
-    run_remote_cmd(ip, "apt-get update")
+    run_remote_cmd(ip, ['apt-get', 'update'])
     run_remote_cmd(ip, "apt-get install -y openjdk-8-jre")
     run_remote_cmd(ip, "mkdir -p /mnt/volume_mc")
     run_remote_cmd(ip, "mount -o discard,defaults,noatime /dev/disk/by-id/scsi-0DO_Volume_volume-mc /mnt/volume_mc")
