@@ -71,6 +71,11 @@ async def start(print_func):
             break
 
     await print_func("`   Done`")
+    await print_func(f"`[] Starting server...`")
+
+    launch_java_server(ip)
+
+    await print_func("`   Done`")
     await print_func(f"`[] Server IP: {ip}`")
 
 async def stop(print_func):
