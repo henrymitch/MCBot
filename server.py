@@ -98,7 +98,7 @@ def run_remote_cmd(ip, cmd):
     process.wait()
 
 def launch_java_server(ip):
-    run_remote_cmd(ip, "apt-get update")
+    #run_remote_cmd(ip, "apt-get update")
     run_remote_cmd(ip, "apt-get install -y openjdk-8-jre")
     run_remote_cmd(ip, "mkdir -p /mnt/volume_mc")
     run_remote_cmd(ip, "mount -o discard,defaults,noatime /dev/disk/by-id/scsi-0DO_Volume_volume-mc /mnt/volume_mc")
