@@ -1,4 +1,0 @@
-#cloud-config
-
-packages:
-  - openjdk-8-jre

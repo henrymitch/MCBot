@@ -1,107 +1,57 @@
-import digitalocean
-import os
-import subprocess
-import time
+import sys
 
-TOKEN = os.getenv('DIGITALOCEAN_ACCESS_TOKEN')
-with open('cloud-config.yaml', 'r') as f:
-    CONFIG = f.read()
-with open('id_rsa.pub', 'r') as f:
-    PUBLIC_KEY = f.read()
-PRIVATE_KEY_FILE = 'id_rsa'
+from google.cloud import compute_v1
+from google.api_core.extended_operation import ExtendedOperation
 
-manager = digitalocean.Manager(token=TOKEN)
+PROJECT = 'vivid-canyon-389309'
+ZONE = 'europe-west1-b'
+INSTANCE = 'mc-server'
 
-def wait_for_complete(droplet):
-    while True:
-        time.sleep(1)
-        actions = droplet.get_actions()
-        for action in actions:
-            action.load()
-            if action.status == 'completed':
-                return
+instances_client = compute_v1.InstancesClient()
+
+def wait_for_extended_operation(operation: ExtendedOperation, verbose_name: str = "operation", timeout: int = 300):
+    result = operation.result(timeout=timeout)
+
+    if operation.error_code:
+        print(
+            f"Error during {verbose_name}: [Code: {operation.error_code}]: {operation.error_message}",
+            file=sys.stderr,
+            flush=True
+        )
+        print(f"Operation ID: {operation.name}", file=sys.stderr, flush=True)
+        raise operation.exception() or RuntimeError(operation.error_message)
+    
+    if operation.warnings:
+        print(f"Warnings during {verbose_name}:\n", file=sys.stderr, flush=True)
+        for warning in operation.warnings:
+            print(f" - {warning.code}: {warning.message}", file=sys.stderr, flush=True)
+    
+    return result
 
 async def start(print_func):
-    droplets = manager.get_all_droplets(tag_name='mc')
-    if len(droplets) > 0:
-        await print_func("`[] Server already running`")
-        return
-    
-    await print_func("`[] Creating instance...`")
-    droplet = digitalocean.Droplet(
-        token=TOKEN,
-        name='mc-main',
-        region='ams3',
-        image='ubuntu-22-10-x64',
-        size_slug='s-2vcpu-4gb-amd',
-        #size_slug='s-1vcpu-1gb-amd',
-        ssh_keys=[PUBLIC_KEY],
-        backups=False,
-        ipv6=False,
-        private_networking=False,
-        #user_data=CONFIG,
-        monitoring=True
+    operation = instances_client.resume(
+        project=PROJECT,
+        zone=ZONE,
+        instance=INSTANCE
     )
 
-    droplet.create()
+    wait_for_extended_operation(operation, "instance start")
 
-    tag = digitalocean.Tag(
-        token=TOKEN,
-        name='mc'
+    instance = instances_client.get(
+        project=PROJECT,
+        zone=ZONE,
+        instance=INSTANCE
     )
-    tag.create()
-    tag.add_droplets([droplet])
 
-    wait_for_complete(droplet)
+    ip = instance.network_interfaces[0].access_configs[0].nat_i_p
 
-    await print_func("`   Done`")
-
-    print(droplet)
-
-    # Wait for IP to be assigned
-    time.sleep(25)
-
-    ip = digitalocean.Droplet.get_object(TOKEN, droplet.id).ip_address
-
-    await print_func("`[] Attaching volume...`")
-
-    volumes = manager.get_all_volumes()
-    for volume in volumes:
-        if volume.name == 'volume-mc':
-            volume.attach(droplet.id, 'ams3')
-            break
-
-    time.sleep(25)
-
-    await print_func("`   Done`")
-    await print_func(f"`[] Starting java server...`")
-
-    launch_java_server(ip)
-
-    await print_func("`   Done`")
     await print_func(f"`[] Server IP: {ip}`")
 
 async def stop(print_func):
-    droplets = manager.get_all_droplets(tag_name='mc')
-    if len(droplets) == 0:
-        await print_func("`[] Server already stopped`")
-        return
-    
-    droplet = droplets[0]
+    operation = instances_client.suspend(
+        project=PROJECT,
+        zone=ZONE,
+        instance=INSTANCE
+    )
 
-    await print_func("`[] Destorying server...`")
-    droplet.destroy()
-    await print_func("`   Done`")
-
-def run_remote_cmd(ip, cmd):
-    process = subprocess.Popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} '{cmd}'", shell=True)
-    process.wait()
-
-def launch_java_server(ip):
-    #run_remote_cmd(ip, "apt-get update")
-    run_remote_cmd(ip, "apt-get -o DPkg::Lock::Timeout=60 install -y openjdk-8-jre")
-    run_remote_cmd(ip, "mkdir -p /mnt/volume_mc")
-    run_remote_cmd(ip, "mount -o discard,defaults,noatime /dev/disk/by-id/scsi-0DO_Volume_volume-mc /mnt/volume_mc")
-
-    # Don't block
-    process = subprocess.Popen(f"ssh -i {PRIVATE_KEY_FILE} -o StrictHostKeychecking=no root@{ip} 'cd /mnt/volume_mc/mc-server && java -Xmx1024M -Xms1024M -jar forge-1.7.10-10.13.4.1614-1.7.10-universal.jar --nogui'", shell=True)
+    wait_for_extended_operation(operation, "instance suspension")

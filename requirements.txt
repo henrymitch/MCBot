@@ -1,2 +1,2 @@
 discord.py
-python-digitalocean
+google-cloud-compute

@@ -26,5 +26,6 @@ async def on_message(message):
         await message.channel.send("`[] Stopping server...`")
         await server.stop(message.channel.send)
         await message.channel.send("`[] Complete`")
+        return
 
 client.run(os.getenv('DISCORD_TOKEN'))
